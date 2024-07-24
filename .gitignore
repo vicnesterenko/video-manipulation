@@ -1,0 +1,6 @@
+venv
+test-venv
+.idea
+__pycache__
+.github
+output

@@ -1,15 +1,15 @@
 import os
 import uuid
-import torch
-import streamlit as st
-
 from datetime import datetime
 from zipfile import ZipFile
-from moviepy.video.io.VideoFileClip import VideoFileClip
-from moviepy.editor import AudioFileClip
-from diffusers import DiffusionPipeline
 
-from riffusion.streamlit import util as streamlit_util
+import streamlit as st
+import torch
+from diffusers import DiffusionPipeline
+from moviepy.editor import AudioFileClip
+from moviepy.video.io.VideoFileClip import VideoFileClip
+from streamlit import util as streamlit_util
+
 from riffusion.spectrogram_image_converter import SpectrogramImageConverter
 from riffusion.spectrogram_params import SpectrogramParams
 
@@ -163,9 +163,9 @@ def main():
                     video_clip = VideoFileClip(video_part_path)
                     video_duration = video_clip.duration
                     width_for_audio = calculate_required_width(video_duration) + 320
+                    audio_path, spec = predict(prompt, negative_prompt, width_for_audio)
                     st.divider()
                     st.write(f'🎧 Audio for your prompt "{prompt}" already generated')
-                    audio_path, spec = predict(prompt, negative_prompt, width_for_audio)
                     st.image(spec, caption="Generated Spectrogram")
                     add_audio_to_video(video_part_path, audio_path, output_video_path)
                     st.session_state.generated_files.append(output_video_path)
@@ -176,7 +176,6 @@ def main():
         if 'zip_name' in st.session_state:
             with open(st.session_state.zip_name, "rb") as f:
                 st.download_button("Download ZIP", f, file_name=st.session_state.zip_name)
-
 
 
 if __name__ == "__main__":
