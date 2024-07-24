@@ -15,6 +15,15 @@ from riffusion.spectrogram_params import SpectrogramParams
 
 
 def split_video(input_path, n_parts):
+    """
+    Function split video on parts, which user give app.
+    These videos parts save in directory 'output'.
+    Each part in name have part number and unique uuid.
+
+    In the future, it can be unique id in system which creates after authentication in app for
+    each user.
+
+    """
     video = VideoFileClip(input_path)
     duration = video.duration
     part_duration = duration / n_parts
@@ -37,6 +46,9 @@ def split_video(input_path, n_parts):
 
 
 def add_audio_to_video(video_path, audio_path, output_path):
+    """
+    Function adds generating audio to chosen part video by user
+    """
     video = VideoFileClip(video_path)
     audio = AudioFileClip(audio_path)
 
@@ -48,12 +60,21 @@ def add_audio_to_video(video_path, audio_path, output_path):
 
 
 def pipe_and_device_generate():
+    """
+    Function can be use when 'cuda' is not available, and you can check this.
+    """
     pipe = DiffusionPipeline.from_pretrained("riffusion/riffusion-model-v1")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    return pipe.to(device)
+    return pipe.to(device), device
 
 
 def predict(prompt, negative_prompt, width):
+    """
+    Function collect spectrogram params for building image and running for training.
+
+    It can be realization of optional params for user input like here:
+    https://github.com/riffusion/riffusion-hobby/blob/main/riffusion/streamlit/tasks/text_to_audio.py
+    """
     params = SpectrogramParams()
     converter = SpectrogramImageConverter(params)
     image = streamlit_util.run_txt2img(
@@ -81,6 +102,15 @@ def archive_files(files):
 
 
 def calculate_required_width(video_duration, sample_rate=44100, hop_length=512):
+    """
+    Function calculated the width of future spectrogram image.
+
+    Formula for generating_audio_duration after training:
+    generating_audio_duration = width * hop_length / sample_rate
+
+    Width and hop_length must be divisible by 8.
+
+    """
     frames_required = int(video_duration * sample_rate / hop_length)
     if frames_required % 8 != 0:
         frames_required += 8 - (frames_required % 8)
@@ -88,6 +118,15 @@ def calculate_required_width(video_duration, sample_rate=44100, hop_length=512):
 
 
 def main():
+    """
+     Main function to run the Streamlit application with UI.
+
+     To 'width_for_audio' adds value 320, because I'm running at cpu and for my predits last 1-1.5
+     seconds don't count corrects and model generating output audio without last one seconds.
+
+     I decided to add 320, because this value divisible by 8 and guarantee me additional
+     generating seconds, that I can cut in add_audio_to_video() function.
+     """
     st.set_page_config(
         page_title="Video Manipulator",
         page_icon="🎥"
@@ -163,20 +202,16 @@ def main():
                     video_clip = VideoFileClip(video_part_path)
                     video_duration = video_clip.duration
                     width_for_audio = calculate_required_width(video_duration) + 320
-                    st.divider()
-                    st.write(f'🎧 Audio for your prompt "{prompt}" already generated')
                     audio_path, spec = predict(prompt, negative_prompt, width_for_audio)
                     st.image(spec, caption="Generated Spectrogram")
                     add_audio_to_video(video_part_path, audio_path, output_video_path)
                     st.session_state.generated_files.append(output_video_path)
                     st.write(f"Audio added to video part {st.session_state.part_to_add_audio} and saved as {output_video_path}")
-                    st.divider()
                     st.session_state.zip_name = archive_files(st.session_state.generated_files)
 
         if 'zip_name' in st.session_state:
             with open(st.session_state.zip_name, "rb") as f:
                 st.download_button("Download ZIP", f, file_name=st.session_state.zip_name)
-
 
 
 if __name__ == "__main__":
