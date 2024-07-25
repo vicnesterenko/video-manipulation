@@ -4,3 +4,4 @@ test-venv
 __pycache__
 .github
 output
+.devcontainer
