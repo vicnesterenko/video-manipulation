@@ -4,7 +4,7 @@ import uuid
 import streamlit as st
 
 from moviepy.video.io.VideoFileClip import VideoFileClip
-from riffusion.streamlit.tasks.model_processing import predict
+from riffusion.streamlit.tasks.model_processing import predict, pipe_and_device_generate
 from riffusion.streamlit.tasks.video_processing import split_video, add_audio_to_video
 from riffusion.streamlit.tasks.utils import archive_files, calculate_required_width, display_videos_in_columns
 
@@ -125,9 +125,10 @@ def generate_audio_page():
                     video_clip = VideoFileClip(video_part_path)
                     video_duration = video_clip.duration
                     width_for_audio = calculate_required_width(video_duration) + 320
+                    pipe, device = pipe_and_device_generate()
                     audio_path, spec = predict(
                         prompt, negative_prompt,
-                        width_for_audio, seeds, num_inference_steps
+                        width_for_audio, seeds, num_inference_steps, str(device)
                     )
                     st.image(spec, caption="Generated Spectrogram")
                     add_audio_to_video(video_part_path, audio_path, output_video_path)

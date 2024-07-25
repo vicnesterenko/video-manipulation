@@ -21,7 +21,7 @@ def pipe_and_device_generate():
     return pipe.to(device), device
 
 
-def predict(prompt, negative_prompt, width, seed, num_inference_steps):
+def predict(prompt, negative_prompt, width, seed, num_inference_steps, device):
     """
     Collects parameters for spectrogram generation and training.
 
@@ -40,7 +40,7 @@ def predict(prompt, negative_prompt, width, seed, num_inference_steps):
         seed=seed,
         width=width,
         height=512,
-        device='gpu'
+        device=device
     )
     wav = converter.audio_from_spectrogram_image(image=image)
     wav.export('output.wav', format='wav')
