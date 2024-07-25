@@ -42,6 +42,12 @@ The Video Manipulation App is designed to help users split a video into multiple
 
 ### Usage Instructions
 
+To run the application, save the following code in a Python file (e.g., app.py), and then execute the following command:
+
+ ```bash
+ streamlit run app.py
+ ```
+
 The application provides a Streamlit interface with the following features:
 
 1. **Upload a Video**: The user uploads a video file in formats like MP4, MOV, or AVI.
