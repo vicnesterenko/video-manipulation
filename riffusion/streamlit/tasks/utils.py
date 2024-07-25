@@ -1,7 +1,22 @@
 import os
+import streamlit as st
 
 from datetime import datetime
 from zipfile import ZipFile
+
+
+def display_videos_in_columns(video_files, num_columns):
+    """
+      Function to display videos in the specified number of columns.
+      """
+    for idx, video_file in enumerate(video_files):
+        col = idx % num_columns
+        if col == 0:
+            st.write("")
+            cols = st.columns(num_columns)
+        with cols[col]:
+            st.write(f"▶ Part {idx + 1}: ")
+            st.video(video_file)
 
 
 def archive_files(files):

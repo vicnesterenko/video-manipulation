@@ -5,21 +5,21 @@ import streamlit as st
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
 from riffusion.streamlit.tasks.model_processing import predict
-from riffusion.streamlit.tasks.utils import archive_files, calculate_required_width
 from riffusion.streamlit.tasks.video_processing import split_video, add_audio_to_video
+from riffusion.streamlit.tasks.utils import archive_files, calculate_required_width, display_videos_in_columns
 
 
 def main():
     """
-     Main function to run the Streamlit application with UI.
+    Main function to run the Streamlit application with UI.
 
     This function sets up the user interface for the Streamlit application.
     It ensures that the 'width_for_audio' parameter includes an additional value of 320.
     This adjustment is necessary because, when running on CPU, the predictions for the last 1-1.5 seconds
     are not accurate, and the model generates output audio without the last second.
     By adding 320, which is divisible by 8, it guarantees additional generated seconds
-    that can be cut in the `add_audio_to_video()` function.
-     """
+    that can be cut in the add_audio_to_video() function.
+    """
     st.set_page_config(
         page_title="Video Manipulator",
         page_icon="🎥"
@@ -63,15 +63,20 @@ def main():
             min_value=1,
             step=1
         )
+        num_columns = st.number_input(
+            "Enter the number of columns to display the video clips",
+            min_value=3,
+            value=3, step=1,
+            help="Recommend optimizing the number of columns if the number of parts "
+                 "exceeds 10 or more to avoid long down scrolling ¨̮ "
+        )
         if st.button("Split Video"):
             with st.spinner('Splitting video, please wait...✨'):
                 st.session_state.output_dir, st.session_state.generated_files = split_video(
                     st.session_state.input_video_path, n_parts)
                 st.divider()
                 st.write(f"**Video has been split into {n_parts} parts and saved**")
-                for i, file in enumerate(st.session_state.generated_files):
-                    st.write(f"▶ Part {i + 1}: {file}")
-                    st.video(file)
+                display_videos_in_columns(st.session_state.generated_files, num_columns)
                 st.divider()
 
         if st.session_state.generated_files:
