@@ -1,131 +1,24 @@
 import os
 import uuid
-import torch
 import streamlit as st
 
-from datetime import datetime
-from zipfile import ZipFile
 from moviepy.video.io.VideoFileClip import VideoFileClip
-from moviepy.editor import AudioFileClip
-from diffusers import DiffusionPipeline
 
-from riffusion.streamlit import util as streamlit_util
-from riffusion.spectrogram_image_converter import SpectrogramImageConverter
-from riffusion.spectrogram_params import SpectrogramParams
-
-
-def split_video(input_path, n_parts):
-    """
-    Function split video on parts, which user give app.
-    These videos parts save in directory 'output'.
-    Each part in name have part number and unique uuid.
-
-    In the future, it can be unique id in system which creates after authentication in app for
-    each user.
-
-    """
-    video = VideoFileClip(input_path)
-    duration = video.duration
-    part_duration = duration / n_parts
-
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
-
-    generated_files = []
-    for i in range(n_parts):
-        start_time = i * part_duration
-        end_time = (i + 1) * part_duration
-        unique_id = uuid.uuid4()
-        output_path = os.path.join(output_dir, f"part_{i + 1}_{unique_id}.mp4")
-
-        subclip = video.subclip(start_time, end_time)
-        subclip.write_videofile(output_path, codec="libx264", audio_codec="aac")
-        generated_files.append(output_path)
-
-    return output_dir, generated_files
-
-
-def add_audio_to_video(video_path, audio_path, output_path):
-    """
-    Function adds generating audio to chosen part video by user
-    """
-    video = VideoFileClip(video_path)
-    audio = AudioFileClip(audio_path)
-
-    if audio.duration > video.duration:
-        audio = audio.subclip(0, video.duration)
-
-    new_video = video.set_audio(audio)
-    new_video.write_videofile(output_path, codec="libx264", audio_codec="aac")
-
-
-def pipe_and_device_generate():
-    """
-    Function can be use when 'cuda' is not available, and you can check this.
-    """
-    pipe = DiffusionPipeline.from_pretrained("riffusion/riffusion-model-v1")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    return pipe.to(device), device
-
-
-def predict(prompt, negative_prompt, width):
-    """
-    Function collect spectrogram params for building image and running for training.
-
-    It can be realization of optional params for user input like here:
-    https://github.com/riffusion/riffusion-hobby/blob/main/riffusion/streamlit/tasks/text_to_audio.py
-    """
-    params = SpectrogramParams()
-    converter = SpectrogramImageConverter(params)
-    image = streamlit_util.run_txt2img(
-        prompt=prompt,
-        num_inference_steps=10,
-        guidance=7.0,
-        negative_prompt=negative_prompt,
-        seed=5,
-        width=width,
-        height=512,
-        device='cpu'
-    )
-    wav = converter.audio_from_spectrogram_image(image=image)
-    wav.export('output.wav', format='wav')
-    st.audio('output.wav')
-    return 'output.wav', image
-
-
-def archive_files(files):
-    zip_name = f'result_{datetime.now().strftime("%d-%m-%Y:%H-%M-%S")}.zip'
-    with ZipFile(zip_name, 'w') as zipf:
-        for file in files:
-            zipf.write(file, os.path.basename(file))
-    return zip_name
-
-
-def calculate_required_width(video_duration, sample_rate=44100, hop_length=512):
-    """
-    Function calculated the width of future spectrogram image.
-
-    Formula for generating_audio_duration after training:
-    generating_audio_duration = width * hop_length / sample_rate
-
-    Width and hop_length must be divisible by 8.
-
-    """
-    frames_required = int(video_duration * sample_rate / hop_length)
-    if frames_required % 8 != 0:
-        frames_required += 8 - (frames_required % 8)
-    return frames_required
+from riffusion.streamlit.tasks.model_processing import predict
+from riffusion.streamlit.tasks.utils import archive_files, calculate_required_width
+from riffusion.streamlit.tasks.video_processing import split_video, add_audio_to_video
 
 
 def main():
     """
      Main function to run the Streamlit application with UI.
 
-     To 'width_for_audio' adds value 320, because I'm running at cpu and for my predits last 1-1.5
-     seconds don't count corrects and model generating output audio without last one seconds.
-
-     I decided to add 320, because this value divisible by 8 and guarantee me additional
-     generating seconds, that I can cut in add_audio_to_video() function.
+    This function sets up the user interface for the Streamlit application.
+    It ensures that the 'width_for_audio' parameter includes an additional value of 320.
+    This adjustment is necessary because, when running on CPU, the predictions for the last 1-1.5 seconds
+    are not accurate, and the model generates output audio without the last second.
+    By adding 320, which is divisible by 8, it guarantees additional generated seconds
+    that can be cut in the `add_audio_to_video()` function.
      """
     st.set_page_config(
         page_title="Video Manipulator",
@@ -194,20 +87,47 @@ def main():
                 f"part_{st.session_state.part_to_add_audio}_{unique_id}_with_audio.mp4"
             )
 
-            prompt = st.text_input("Enter the prompt for audio generation")
-            negative_prompt = st.text_input("Enter the negative prompt for audio generation")
+            prompt = st.text_input(
+                "Enter the prompt for audio generation",
+                help='˶ᵔ ᵕ ᵔ˶ feel free'
+            )
+            negative_prompt = st.text_input(
+                "Enter the negative prompt for audio generation",
+                help='(·•᷄_•᷅ )'
+            )
+            seeds = st.number_input(
+                "Enter the number of seeds you need",
+                value=42,
+                help="Change this to generate different variations"
+            )
+            num_inference_steps = st.number_input(
+                "Enter the number of inference steps",
+                value=30, min_value=10, step=1,
+                help="🕒 of training"
+            )
 
             if st.button("Generate and Add Audio"):
-                with st.spinner('Generating audio, please wait...✨'):
-                    video_clip = VideoFileClip(video_part_path)
-                    video_duration = video_clip.duration
-                    width_for_audio = calculate_required_width(video_duration) + 320
-                    audio_path, spec = predict(prompt, negative_prompt, width_for_audio)
-                    st.image(spec, caption="Generated Spectrogram")
-                    add_audio_to_video(video_part_path, audio_path, output_video_path)
-                    st.session_state.generated_files.append(output_video_path)
-                    st.write(f"Audio added to video part {st.session_state.part_to_add_audio} and saved as {output_video_path}")
-                    st.session_state.zip_name = archive_files(st.session_state.generated_files)
+                if prompt:
+                    with st.spinner('Generating audio, please wait...✨'):
+                        video_clip = VideoFileClip(video_part_path)
+                        video_duration = video_clip.duration
+                        width_for_audio = calculate_required_width(video_duration) + 320
+                        audio_path, spec = predict(
+                            prompt,
+                            negative_prompt,
+                            width_for_audio,
+                            seeds,
+                            num_inference_steps
+                        )
+                        st.image(spec, caption="Generated Spectrogram")
+                        add_audio_to_video(video_part_path, audio_path, output_video_path)
+                        st.session_state.generated_files.append(output_video_path)
+                        st.write(
+                            f"Audio added to video part {st.session_state.part_to_add_audio} and saved as {output_video_path}"
+                        )
+                        st.session_state.zip_name = archive_files(st.session_state.generated_files)
+                else:
+                    st.warning("Prompt must be provided to generate audio.")
 
         if 'zip_name' in st.session_state:
             with open(st.session_state.zip_name, "rb") as f:
