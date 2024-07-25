@@ -18,17 +18,6 @@ def main():
         """
     st.set_page_config(page_title="Video Manipulator", page_icon="🎥")
     st.markdown("<h1 style='text-align: center;'>Video Manipulator</h1>", unsafe_allow_html=True)
-    with st.expander("About˙✧˖°"):
-        st.write("""
-        - **🎞️:** Splits your video into multiple parts.
-        - **🎵:** Generates custom audio based on your input in prompt and other settings parameters.
-        - **🔗:** Attaches the generated audio to your chosen video part.
-        - **🗃️:** Download an archive containing all the video parts and their corresponding audios.
-        """)
-        st.image(
-            "https://www.icegif.com/wp-content/uploads/2023/02/icegif-945.gif",
-            width=250
-        )
 
     pages = ["Upload Video", "Split Video", "Generate Audio", "Download"]
     if 'page' not in st.session_state:
@@ -42,7 +31,7 @@ def main():
         split_video_page()
     elif st.session_state.page == "Generate Audio":
         generate_audio_page()
-    elif st.session_state.page == "Download Zip":
+    elif st.session_state.page == "Download":
         download_page()
 
 
@@ -56,7 +45,7 @@ def upload_video_page():
         with open(st.session_state.input_video_path, "wb") as f:
             f.write(input_video.read())
         st.session_state.page = "Split Video"
-        st.experimental_rerun()
+        st.rerun()
 
 
 def split_video_page():
@@ -83,11 +72,11 @@ def split_video_page():
             display_videos_in_columns(st.session_state.generated_files, num_columns)
             if st.button("Next: Generate Audio"):
                 st.session_state.page = "Generate Audio"
-                st.experimental_rerun()
+                st.rerun()
     else:
         st.warning("Please upload a video first.")
         st.session_state.page = "Upload Video"
-        st.experimental_rerun()
+        st.rerun()
 
 
 def generate_audio_page():
@@ -137,13 +126,13 @@ def generate_audio_page():
                     st.session_state.last_output_video = output_video_path
                     st.session_state.zip_name = archive_files(st.session_state.generated_files)
                     st.session_state.page = "Download"
-                    st.experimental_rerun()
+                    st.rerun()
             else:
                 st.warning("Prompt must be provided to generate audio")
     else:
         st.warning("Please split the video first")
         st.session_state.page = "Split Video"
-        st.experimental_rerun()
+        st.rerun()
 
 
 def download_page():
@@ -162,11 +151,11 @@ def download_page():
                     if key in st.session_state:
                         del st.session_state[key]
                 st.session_state.page = "Upload Video"
-                st.experimental_rerun()
+                st.rerun()
     else:
         st.warning("No files to download")
         st.session_state.page = "Upload Video"
-        st.experimental_rerun()
+        st.rerun()
 
 
 if __name__ == "__main__":
