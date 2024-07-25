@@ -2,6 +2,8 @@
 
 This app uses default logic for generating audio based on user prompts from [Riffusion Hobby](https://github.com/riffusion/riffusion-hobby).
 
+You can test in 2 deployment links: https://manipulation-video-v1.streamlit.app/ and https://manipulation-video-v2.streamlit.app/
+
 ### Overview
 
 The Video Manipulation App is designed to help users split a video into multiple parts, generate custom audio based on user input, and attach the generated audio to a selected video part.
@@ -77,4 +79,10 @@ The application provides a Streamlit interface with the following features:
 
   However, due to potential inaccuracies in training, an additional length of 320 is added because it is divisible by 8, ensuring extra generated seconds that can be trimmed using the `add_audio_to_video` method from `riffusion.streamlit.tasks.video_processing`.
 
+- **✨ Fine-Tune Audio Generation Parameters**: For more personalized audio output, you can fine-tune the audio generation parameters such as `prompt`, `seeds`, and `number of inference steps`. This allows you to experiment with different settings to achieve the desired audio effects and quality. Here’s a brief overview of these parameters:
+  - **Prompt**: This helps in guiding the audio generation process by specifying what you do not want in the audio.
+  - **Seeds**: Seeds control the randomness in the generation process, ensuring reproducible results if needed.
+  - **Number of Inference Steps**: Adjusting this parameter can balance the quality and speed of audio generation. More steps usually mean better quality but longer processing time.
+
+   By customizing these settings, you can create unique audio tracks tailored to your specific needs and preferences.
 - **✨ Output Directory and Archive Naming**: The output videos are saved in the output folder, with each part named using a part number and a unique UUID. The archive of the files is named in a user-friendly format with a timestamp, making it easy to identify and manage.
