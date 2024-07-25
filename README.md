@@ -4,7 +4,9 @@ This app uses default logic for generating audio based on user prompts from [Rif
 
 ### Overview
 
-The Video Manipulation App is designed to help users split a video into multiple parts, generate custom audio based on user input, and attach the generated audio to a selected video part. The app provides an intuitive user interface for these tasks, making it easy to manage and manipulate video files with custom audio.
+The Video Manipulation App is designed to help users split a video into multiple parts, generate custom audio based on user input, and attach the generated audio to a selected video part.
+![image](https://github.com/user-attachments/assets/b5936466-5b93-488a-ac31-3309a9d21380)
+
 
 ### Installation
 
