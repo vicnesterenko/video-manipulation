@@ -40,7 +40,7 @@ def predict(prompt, negative_prompt, width, seed, num_inference_steps):
         seed=seed,
         width=width,
         height=512,
-        device='cpu'
+        device='gpu'
     )
     wav = converter.audio_from_spectrogram_image(image=image)
     wav.export('output.wav', format='wav')
